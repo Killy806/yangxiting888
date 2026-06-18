@@ -1,0 +1,309 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+<head>
+  <title>Week 9 - 设计思维</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --sky:#B8E4F0; --pink:#FFD9E6; --rose:#F7A8C4; --blue:#5B9BD5;
+      --deep:#2C3E6B; --ink:#3A3A5C; --muted:#7B8BA3; --line:#d9e8f0;
+      --gold:#F5D98E; --lav:#E8D5F5; --mint:#BEEAD5;
+      --shadow:0 18px 40px rgba(44,62,107,.13);
+    }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body {
+      margin:0; color:var(--ink);
+      font-family:"Microsoft YaHei","PingFang SC","Segoe UI",Arial,sans-serif;
+      background:
+        radial-gradient(circle at 22% 18%, rgba(255,255,255,.95) 0 62px, transparent 64px),
+        radial-gradient(circle at 27% 20%, rgba(255,255,255,.82) 0 42px, transparent 44px),
+        radial-gradient(circle at 76% 10%, rgba(255,255,255,.88) 0 82px, transparent 84px),
+        linear-gradient(180deg,#B8E4F0 0%,#DDF4FA 38%,#FFFFFF 78%,#FFF7FB 100%);
+      line-height:1.75;
+    }
+    body::before {
+      content:""; position:fixed; inset:0; pointer-events:none; opacity:.38;
+      background:
+        radial-gradient(circle at 12px 18px, #fff 0 8px, transparent 9px),
+        radial-gradient(circle at 34px 19px, #fff 0 13px, transparent 14px),
+        radial-gradient(circle at 57px 24px, #fff 0 9px, transparent 10px),
+        radial-gradient(circle at 96px 47px, rgba(245,217,142,.55) 0 2px, transparent 3px);
+      background-size:150px 96px;
+      animation: drift 42s linear infinite;
+    }
+    .loader {
+      position:fixed; inset:0; z-index:60; display:grid; place-items:center;
+      background:linear-gradient(135deg,rgba(184,228,240,.96),rgba(255,255,255,.96),rgba(255,217,230,.92));
+      transition:opacity .7s ease, visibility .7s ease;
+    }
+    .loader.hide { opacity:0; visibility:hidden; }
+    .loader-box { text-align:center; color:var(--deep); font-weight:900; }
+    .loader-box img { width:148px; max-height:150px; object-fit:contain; animation:floaty 2.2s ease-in-out infinite; }
+    .cursor-glow {
+      position:fixed; width:22px; height:22px; border-radius:50%; z-index:70; pointer-events:none;
+      background:radial-gradient(circle,rgba(247,168,196,.45),transparent 72%);
+      transform:translate(-50%,-50%);
+    }
+    .floating-cloud {
+      position:fixed; width:170px; height:58px; border-radius:999px; background:rgba(255,255,255,.6);
+      box-shadow:42px 8px 0 rgba(255,255,255,.48),80px -10px 0 rgba(255,255,255,.35);
+      pointer-events:none; z-index:0; animation:cloudFloat 26s linear infinite;
+    }
+    .cloud-a { top:18%; left:-240px; animation-delay:-4s; }
+    .cloud-b { top:52%; left:-320px; transform:scale(.72); animation-delay:-16s; }
+    a { color:var(--blue); }
+    #wrapper { position:relative; z-index:1; }
+    #header { padding:42px clamp(22px,6vw,76px) 20px; }
+    #header .inner {
+      max-width:1180px; margin:0 auto; display:flex; justify-content:space-between; align-items:center;
+      border-bottom:1px solid var(--line); padding-bottom:22px;
+    }
+    .logo { display:inline-flex; align-items:center; gap:12px; text-decoration:none; color:var(--deep); font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
+    .logo img {
+      width:54px; height:54px; object-fit:cover; border-radius:50%;
+      border:4px solid var(--sky); box-shadow:0 0 0 3px #fff,0 8px 18px rgba(91,155,213,.22);
+    }
+    .menu-button {
+      border:0; background:transparent; color:var(--deep); font-weight:900; letter-spacing:.12em;
+      text-transform:uppercase; cursor:pointer; padding:8px 0; font-size:14px;
+    }
+    #menu {
+      position:fixed; inset:0 0 0 auto; width:min(360px,88vw); z-index:30; padding:34px 30px;
+      background:rgba(255,255,255,.96); backdrop-filter:blur(22px); box-shadow:-24px 0 50px rgba(44,62,107,.18);
+      transform:translateX(105%); transition:transform .36s cubic-bezier(.2,.8,.2,1);
+    }
+    #menu.open { transform:translateX(0); }
+    #menu h2 { margin:0 0 18px; color:var(--deep); }
+    #menu ul { list-style:none; padding:0; margin:0; }
+    #menu li a { display:block; padding:12px 0; border-bottom:1px solid var(--line); text-decoration:none; color:var(--ink); font-weight:800; }
+    #menu li a.active, #menu li a:hover { color:var(--rose); }
+    .menu-close { position:absolute; top:22px; right:22px; width:38px; height:38px; border:0; border-radius:50%; background:linear-gradient(135deg,var(--sky),var(--pink)); color:var(--deep); font-size:20px; cursor:pointer; }
+    .menu-scrim { position:fixed; inset:0; background:rgba(44,62,107,.18); z-index:29; opacity:0; pointer-events:none; transition:.3s; }
+    .menu-scrim.open { opacity:1; pointer-events:auto; }
+    #main { padding:12px clamp(22px,6vw,76px) 72px; }
+    .inner { max-width:1180px; margin:0 auto; }
+    .hero { display:grid; grid-template-columns:minmax(0,1fr) minmax(180px,320px); gap:34px; align-items:center; margin:18px 0 34px; }
+    h1 { color:var(--deep); font-size:clamp(36px,6vw,76px); line-height:1.05; letter-spacing:0; margin:0 0 16px; }
+    h2 { color:var(--deep); margin:34px 0 10px; }
+    h3 { color:var(--deep); margin:26px 0 8px; }
+    .intro { color:#586a82; font-size:18px; max-width:760px; }
+    .hero-cinna { width:100%; max-height:330px; object-fit:contain; filter:drop-shadow(0 20px 22px rgba(91,155,213,.22)); animation:floaty 4s ease-in-out infinite; }
+    .hero-cinna-card { border-radius:18px; background:#fff; padding:10px; box-shadow:var(--shadow); object-fit:cover; }
+    .tiles { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:22px; margin-top:28px; }
+    .tile { position:relative; min-height:260px; overflow:hidden; border-radius:4px; box-shadow:var(--shadow); opacity:0; transform:translateY(28px); animation:tileIn .75s cubic-bezier(.2,.8,.2,1) forwards; }
+    .tile:nth-child(2){animation-delay:.06s} .tile:nth-child(3){animation-delay:.12s} .tile:nth-child(4){animation-delay:.18s} .tile:nth-child(5){animation-delay:.24s} .tile:nth-child(6){animation-delay:.30s} .tile:nth-child(7){animation-delay:.36s} .tile:nth-child(8){animation-delay:.42s} .tile:nth-child(9){animation-delay:.48s} .tile:nth-child(10){animation-delay:.54s}
+    .tile img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform .45s ease, filter .45s ease; }
+    .tile a { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; text-align:center; padding:24px; text-decoration:none; color:#fff; background:linear-gradient(135deg,rgba(44,62,107,.72),rgba(91,155,213,.50)); transition:.35s; }
+    .tile:nth-child(2n) a { background:linear-gradient(135deg,rgba(247,168,196,.72),rgba(91,155,213,.45)); }
+    .tile:nth-child(3n) a { background:linear-gradient(135deg,rgba(91,155,213,.66),rgba(190,234,213,.58)); }
+    .tile h2 { color:#fff; margin:0 auto 10px; width:min(100%,220px); padding-bottom:10px; border-bottom:2px solid rgba(255,255,255,.75); }
+    .tile p { margin:0; color:rgba(255,255,255,.94); font-weight:800; }
+    .tile:hover img { transform:scale(1.08); filter:saturate(1.05); }
+    .tile:hover a { background:linear-gradient(135deg,rgba(44,62,107,.35),rgba(247,168,196,.32)); }
+    .page-grid { display:grid; grid-template-columns:minmax(0,1fr) 260px; gap:34px; align-items:start; }
+    .article-card, .profile-card { background:rgba(255,255,255,.86); border:1px solid rgba(91,155,213,.16); border-radius:10px; padding:clamp(22px,4vw,38px); box-shadow:var(--shadow); }
+    .side-cinna { position:sticky; top:24px; text-align:center; }
+    .side-cinna img { max-width:220px; width:100%; object-fit:contain; filter:drop-shadow(0 14px 16px rgba(91,155,213,.16)); animation:floaty 4.6s ease-in-out infinite; }
+    .figures { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:18px; margin:24px 0; }
+    .figure, .video-card { margin:0; }
+    .figure.wide { grid-column:1 / -1; }
+    .figure img, .video-card video { width:100%; display:block; border-radius:8px; box-shadow:0 14px 28px rgba(44,62,107,.12); background:#eef8fc; }
+    figcaption { color:var(--muted); font-size:13px; margin-top:8px; }
+    .video-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; margin:24px 0; }
+    .code-panel { overflow:hidden; border-radius:10px; background:#26334f; box-shadow:var(--shadow); margin:24px 0; }
+    .code-title { height:38px; display:flex; align-items:center; gap:7px; color:#eaf7ff; font-size:12px; padding:0 14px; background:rgba(255,255,255,.08); }
+    .code-title span { width:10px; height:10px; border-radius:50%; background:#ff7b8a; } .code-title span:nth-child(2){background:#ffd66b} .code-title span:nth-child(3){background:#78ddb0}
+    pre { margin:0; padding:18px; overflow-x:auto; color:#eaf7ff; font-size:13px; line-height:1.62; }
+    code { font-family:Consolas,"SFMono-Regular",monospace; }
+    .download { display:inline-flex; margin-top:12px; align-items:center; min-height:42px; padding:0 16px; border-radius:999px; background:linear-gradient(135deg,var(--sky),var(--pink)); color:var(--deep); text-decoration:none; font-weight:900; }
+    .avatar { width:min(360px,100%); border-radius:12px; box-shadow:var(--shadow); display:block; margin-bottom:24px; }
+    .profile-card dl { display:grid; grid-template-columns:88px 1fr; gap:8px 14px; }
+    .profile-card dt { font-weight:900; color:var(--deep); }
+    .profile-card dd { margin:0; color:#596a80; }
+    .profile-card.interactive {
+      overflow:hidden; background:linear-gradient(135deg,rgba(255,255,255,.9),rgba(232,247,252,.82),rgba(255,242,248,.82));
+      border:1px solid rgba(255,255,255,.88);
+    }
+    .avatar-zone { position:relative; width:218px; height:218px; margin:0 auto 28px; cursor:pointer; display:grid; place-items:center; }
+    .avatar-zone::before {
+      content:""; position:absolute; inset:-24px; border-radius:50%;
+      background:
+        radial-gradient(circle at 18% 30%, #fff 0 12px, transparent 13px),
+        radial-gradient(circle at 30% 26%, #fff 0 18px, transparent 19px),
+        radial-gradient(circle at 42% 31%, #fff 0 12px, transparent 13px),
+        radial-gradient(circle at 76% 72%, #fff 0 11px, transparent 12px),
+        radial-gradient(circle at 86% 68%, #fff 0 16px, transparent 17px),
+        radial-gradient(circle at 96% 73%, #fff 0 10px, transparent 11px);
+      filter:drop-shadow(0 8px 10px rgba(91,155,213,.14));
+      animation:cloudOrbit 9s linear infinite;
+      pointer-events:none;
+    }
+    .avatar-zone::after {
+      content:""; position:absolute; inset:-9px; border-radius:50%; border:3px dashed rgba(91,155,213,.46);
+      animation:spin 12s linear infinite; pointer-events:none;
+    }
+    .avatar-ring {
+      position:relative; width:190px; height:190px; padding:10px; border-radius:50%;
+      background:conic-gradient(from 20deg,var(--blue),var(--pink),var(--gold),var(--sky),var(--blue));
+      box-shadow:0 0 0 10px rgba(255,255,255,.78),0 0 0 17px rgba(184,228,240,.72),0 16px 34px rgba(91,155,213,.24);
+      transition:transform .7s ease, box-shadow .45s ease;
+    }
+    .avatar-ring::after {
+      content:""; position:absolute; inset:17px; border:2px dashed rgba(255,255,255,.86); border-radius:50%;
+      pointer-events:none;
+    }
+    .avatar-zone:hover .avatar-ring { transform:scale(1.08) rotate(360deg); box-shadow:0 0 0 10px rgba(255,255,255,.82),0 0 0 17px rgba(184,228,240,.78),0 0 36px rgba(247,168,196,.78); }
+    .avatar-ring .avatar {
+      width:100%; height:100%; margin:0; position:relative; z-index:1; border-radius:50%;
+      object-fit:cover; border:5px solid #fff; box-shadow:inset 0 0 0 2px rgba(91,155,213,.18);
+    }
+    .info-panel {
+      max-height:0; opacity:0; overflow:hidden; border-radius:14px;
+      background:rgba(255,255,255,.62); backdrop-filter:blur(18px); border:1px solid rgba(184,228,240,.8);
+      transition:max-height .65s ease, opacity .45s ease, padding .45s ease, transform .45s ease;
+      padding:0 14px; margin:8px 0 18px; transform:translateY(-8px);
+    }
+    .profile-card:hover .info-panel { max-height:560px; opacity:1; padding:14px; transform:translateY(0); }
+    .info-panel p { margin:9px 0; display:grid; grid-template-columns:92px 1fr; gap:10px; color:#53647d; opacity:0; transform:translateY(8px); transition:.35s; }
+    .profile-card:hover .info-panel p { opacity:1; transform:translateY(0); }
+    .info-panel strong { color:var(--deep); }
+    .social-links { display:flex; flex-wrap:wrap; gap:12px; margin-top:20px; }
+    .social-links a {
+      display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:0 16px; border-radius:999px;
+      text-decoration:none; color:var(--deep); font-weight:900; background:linear-gradient(135deg,rgba(184,228,240,.92),rgba(255,217,230,.92));
+      box-shadow:0 10px 20px rgba(91,155,213,.14); transition:.25s;
+    }
+    .social-links a:hover { transform:translateY(-2px); box-shadow:0 0 22px rgba(247,168,196,.7); color:#d95e93; }
+    .particle { position:fixed; width:18px; height:18px; pointer-events:none; z-index:80; animation:particleFly .85s ease-out forwards; font-size:17px; font-weight:900; text-shadow:0 4px 10px rgba(91,155,213,.18); }
+    footer { padding:34px clamp(22px,6vw,76px); text-align:center; color:#fff; background:linear-gradient(135deg,var(--deep),var(--blue)); }
+    .progress { position:fixed; top:0; left:0; height:4px; width:0; z-index:40; background:linear-gradient(90deg,var(--blue),var(--rose),var(--gold)); }
+    .back-top { position:fixed; right:22px; bottom:22px; width:52px; height:52px; border:0; border-radius:50%; background:#fff; box-shadow:var(--shadow); cursor:pointer; opacity:0; transform:translateY(16px); pointer-events:none; transition:.25s; z-index:20; }
+    .back-top.show { opacity:1; transform:translateY(0); pointer-events:auto; }
+    .back-top img { width:42px; height:42px; object-fit:contain; }
+    @keyframes drift { to { background-position:0 0,0 0,130px 90px,130px 90px; } }
+    @keyframes floaty { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    @keyframes cloudFloat { from { transform:translateX(0); } to { transform:translateX(calc(100vw + 420px)); } }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    @keyframes cloudOrbit { to { transform:rotate(360deg); } }
+    @keyframes particleFly { to { transform:translate(var(--x),var(--y)) scale(.2); opacity:0; } }
+    @keyframes tileIn { to { opacity:1; transform:translateY(0); } }
+    @media (max-width:900px) { .hero,.page-grid { grid-template-columns:1fr; } .tiles { grid-template-columns:repeat(2,minmax(0,1fr)); } .side-cinna { position:relative; top:auto; } }
+    @media (max-width:560px) { #header { padding-top:26px; } .tiles { grid-template-columns:1fr; } .tile { min-height:220px; } .profile-card dl { grid-template-columns:1fr; } }
+    @media print { #header,#menu,.menu-scrim,.progress,.back-top,.side-cinna { display:none!important; } body { background:#fff; } .article-card,.profile-card { box-shadow:none; border:0; } }
+    </style>
+</head>
+<body>
+  <div class="loader" id="loader"><div class="loader-box"><img src="assets/cinna-main.png" alt="Cinnamoroll"><div>正在加载学习日志...</div></div></div>
+  <div class="cursor-glow" id="cursorGlow"></div>
+  <div class="floating-cloud cloud-a"></div>
+  <div class="floating-cloud cloud-b"></div>
+  <div class="progress" id="progress"></div>
+  <div id="wrapper">
+    <header id="header">
+      <div class="inner">
+        <a href="index.html" class="logo"><img src="assets/profile_avatar.jpg" alt="杨茜婷头像"><span>Back</span></a>
+        <button class="menu-button" id="menuToggle" type="button" aria-controls="menu" aria-expanded="false">Menu</button>
+      </div>
+    </header>
+    
+    <div class="menu-scrim" id="menuScrim"></div>
+    <nav id="menu" aria-label="Menu">
+      <button class="menu-close" id="menuClose" aria-label="Close menu">×</button>
+      <h2>Menu</h2>
+      <ul><li><a class="" href="index.html">Home</a></li>
+<li><a class="" href="about.html">About Me</a></li>
+<li><a class="" href="finalproject.html">Final Project</a></li>
+<li><a class="" href="week1.html">Week 1</a></li>
+<li><a class="" href="week2.html">Week 2</a></li>
+<li><a class="" href="week3.html">Week 3</a></li>
+<li><a class="" href="week4.html">Week 4</a></li>
+<li><a class="" href="week5.html">Week 5</a></li>
+<li><a class="" href="week6.html">Week 6</a></li>
+<li><a class="" href="week7.html">Week 7</a></li>
+<li><a class="" href="week8.html">Week 8</a></li>
+<li><a class="active" href="week9.html">Week 9</a></li>
+<li><a class="" href="week10.html">Week 10</a></li></ul>
+    </nav>
+    <main id="main"><div class="inner">
+    <article class="page-grid">
+      <div class="article-card">
+        <h1>设计思维</h1>
+        <p class="intro">围绕桌面智能光线检测仪，用共情、定义、构思、原型和测试推进方案。</p>
+        <section class="word-content"><p>第九周：设计思维设计思维的概念：设计思维（Design Thinking）是一种以人的需求（Human-Centered）为核心驱动的创造性问题解决方法论，强调通过共情（Empathize）理解用户真实痛点 → 定义问题（Define）→ 发散构思（Ideate）→ 快速制作低保真原型（Prototype）→ 实地测试与迭代反馈（Test）的循环过程，来在非确定性条件下寻找既可行（技术可实现）、又合需（满足用户诉求）、且具商业/社会价值的解法。它不局限于设计师，而是跨学科团队用来打破“先想清楚再做”的传统线性思维——鼓励早失败、快试错、持续迭代，把模糊复杂的问题逐步收敛为可被验证的解决方案。用户—场景—问题序号用户场景具体问题是否适合两天原型1学生宿舍宿舍环境是否闷热，潮湿是2学生宿舍检测桌面光线强弱进行提醒是3学生宿舍定时作息提醒是4顾客餐厅选完饭菜后通过摄像头识别饭菜计算价格否5学生宿舍书桌前久坐提醒，检测坐立时间，时间超过1h发出久坐提醒否6学生宿舍书桌学习写字时用眼距离提醒，检测用眼距离，距离过近发出提醒否7学生宿舍浴室洗澡水温度检测和控制，显示当前洗澡水温度否8学生宿舍照明自定义早晚宿舍灯光开启和关闭的时间，定时开关灯否终期项目的用户画像：李华是一名计算机科学与技术专业的本科二年级学生，日常需要在宿舍书桌前长时间使用电脑完成代码调试、电路设计与课程作业撰写。他对桌面环境的光线条件较为敏感，经常因室内灯光光线不佳或窗帘遮挡导致屏幕反光、眼睛疲劳，却缺乏直观的量化判断依据。他希望有一款小巧、静音、无需频繁操作的桌面设备，能够实时监测当前环境光线强度并以提示灯直观反馈，同时最好能与他的ESP32学习项目相结合，既能满足实用需求，又能作为课程作品展示软硬件协同能力。他偏好开源、可二次开发的方案，愿意花两天时间焊接与调试，但不愿投入过高成本，追求“够用、稳定、可展示”的均衡体验。设计思维5大阶段的实战推演——基于桌面智能光线检测仪的推演（一）共情：通过访谈目标学生用户，发现其核心痛点是缺乏量化依据来调节桌面光线，而非简单地知道“光线暗”。用户希望设备能无感运行、即时反馈，避免因光线不适导致的眼睛疲劳与注意力分散。（二）定义问题：将模糊痛点收敛为明确的工程设计目标，即设计一款基于ESP32的低成本桌面环境光监测设备。该设备需实时采集光照强度，通过OLED屏幕与RGB LED以数值加颜色等级双重方式反馈，并支持WiFi上报数据。（三）构思：围绕传感器选型提出BH1750数字式方案与光敏电阻加ADC低成本方案的对比，同时发散反馈方式为OLED显示、RGB LED渐变或蜂鸣器预警。此外还探讨了USB供电加WiFi联网与电池供电离线模式的取舍，以及3D打印与亚克力切割两种外壳形式。（四）原型制作：选取ESP32搭配BH1750与0.96寸OLED的最优组合，快速搭建最小可行版本，主循环每500毫秒读取光照值并映射为等级显示。同时3D打印简易底座并编写Arduino代码，实现OLED数值显示与RGB LED随等级变色的双重反馈。（五）测试与迭代：将原型交给目标用户试用，发现OLED在强光下可视性差、RGB LED夜间过于刺眼等问题。据此迭代加入自动背光调节与夜间模式，优化后用户满意度从6分提升至9分，确认方案收敛。设计项目头脑风暴：方案名称触发条件 / 输入装置反应 / 输出需要材料两天内是否可做方案 1：智能温湿度计自动检测温度和湿度温度高湿度高绿LED灯亮，温度低湿度高红LED邓亮，温度湿度都适合则等不亮红绿LED灯，温度传感器，湿度传感器，ESP32电路板是方案 2：桌面智能光线检测仪自动检测光线强度绿LED灯亮则光线适合，红LED亮则是光线过暗，光线过亮则是显示屏显示橙色红绿LED灯，光敏电阻，ESP32电路板，显示屏是方案 3：智能坐姿提醒仪当超声波测距模块检测到人与桌面距离 &lt; 50 cm 且持续 10 分钟时语音模块播放“注意坐姿，休息一下吧”；同时点亮一个红色 LED 作为视觉提醒Arduino Nano / Uno、HCSR04 超声波模块、语音播报模块（JQ6500 / DFPlayer Mini）、小喇叭、红色 LED、杜邦线、面包板、MicroUSB 线是方案 4：智能寝室除湿防潮盒当DHT11温湿度传感器检测到衣柜/书桌内部湿度高于75%且持续1分钟时ESP32控制微型继电器闭合，启动小型USB除湿器或换气风扇；湿度降至60%以下后自动断电；同时通过蓝牙向手机APP发送当前湿度状态，并在OLED屏显示ESP32单片机、DHT11温湿度传感器、继电器模块、微型USB风扇/半导体制冷片、OLED显示屏、HC-05蓝牙模块、充电宝或5V电源、亚克力外壳或塑料收纳盒是方案 5：校园雨天智能提醒伞架当雨滴传感器检测到降水，或土壤湿度传感器检测到阳台/窗台有雨水溅落时，系统通过WiFi向绑定手机发送微信/短信提醒&quot;记得带伞&quot;；若感应到伞已放回（重量传感器检测），则通过舵机打开伞架内部的加热风扇（可选）或LED照明灯，提示伞已归位ESP32、雨滴传感器、HX711重量传感器+秤盘、SG90舵机、蜂鸣器、手机支架、USB小风扇、防水外壳、5V电源是五、第九周总结与体会通过本次设计思维驱动的创客项目实践，我深刻体会到这一方法论在工程创新中的核心价值与指导意义。设计思维强调以人的需求为中心，通过共情、定义问题、构思、原型制作与测试迭代五个阶段的循环递进，将模糊的痛点逐步收敛为可验证的解决方案。在共情阶段，我学会了放下主观假设，通过访谈与观察真正走进用户的使用场景，挖掘其深层次的真实需求而非表面诉求；在定义问题阶段，我懂得了如何将宽泛的痛点精准收敛为明确的工程目标，为后续的技术选型与方案设计提供清晰导向；构思阶段的头脑风暴让我体验到发散思维的价值，不急于否定任何可能性，而是在多方案对比中找到最优路径；原型制作阶段则教会我“快速试错”的重要性，用最低成本搭建最小可行版本，让想法尽早接受检验；测试与迭代阶段是最具启发性的环节——真实用户的反馈往往揭示出设计者未曾预料的问题，只有通过持续的迭代优化，才能让产品从“能用”真正走向“好用”。这次实践让我认识到，技术能力固然重要，但如果没有设计思维的引导，很容易陷入“为技术而技术”的误区；唯有始终将用户需求置于核心，才能在复杂工程问题中找到既可行又合需的创新解法。</p></section>
+        
+        
+        
+        
+      </div>
+      <aside class="side-cinna"><img src="assets/cinna-sit.png" alt="Cinnamoroll"></aside>
+    </article></div></main>
+    <footer>Made with Cinnamoroll Power · 从代码到实物 · 杨茜婷</footer>
+  </div>
+  <button class="back-top" id="backTop" aria-label="回到顶部"><img src="assets/cinna-blue.png" alt=""></button>
+  <script>
+    const loader = document.getElementById('loader');
+    addEventListener('load', () => setTimeout(() => loader.classList.add('hide'), 900));
+    const menu = document.getElementById('menu');
+    const scrim = document.getElementById('menuScrim');
+    const openBtn = document.getElementById('menuToggle');
+    const closeBtn = document.getElementById('menuClose');
+    const progress = document.getElementById('progress');
+    const backTop = document.getElementById('backTop');
+    const cursorGlow = document.getElementById('cursorGlow');
+    function setMenu(open) {
+      menu.classList.toggle('open', open);
+      scrim.classList.toggle('open', open);
+      openBtn.setAttribute('aria-expanded', String(open));
+    }
+    openBtn.addEventListener('click', () => setMenu(true));
+    closeBtn.addEventListener('click', () => setMenu(false));
+    scrim.addEventListener('click', () => setMenu(false));
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
+    function onScroll() {
+      const max = document.documentElement.scrollHeight - innerHeight;
+      progress.style.width = (max > 0 ? scrollY / max * 100 : 0) + '%';
+      backTop.classList.toggle('show', scrollY > 500);
+    }
+    addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    backTop.addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
+    let glowX = 0, glowY = 0, targetX = 0, targetY = 0;
+    addEventListener('pointermove', (event) => {
+      targetX = event.clientX;
+      targetY = event.clientY;
+    }, { passive: true });
+    function renderGlow() {
+      glowX += (targetX - glowX) * 0.18;
+      glowY += (targetY - glowY) * 0.18;
+      cursorGlow.style.left = glowX + 'px';
+      cursorGlow.style.top = glowY + 'px';
+      requestAnimationFrame(renderGlow);
+    }
+    renderGlow();
+    const avatarZone = document.getElementById('avatarZone');
+    if (avatarZone) {
+      avatarZone.addEventListener('mouseenter', () => {
+        const rect = avatarZone.getBoundingClientRect();
+        const colors = ['#5B9BD5','#F7A8C4','#E8D5F5','#F5D98E','#BEEAD5'];
+        for (let i = 0; i < 11; i++) {
+          const p = document.createElement('span');
+          p.className = 'particle';
+          p.textContent = i % 3 === 0 ? '☁' : '✦';
+          p.style.left = rect.left + rect.width / 2 + 'px';
+          p.style.top = rect.top + rect.height / 2 + 'px';
+          p.style.color = colors[i % colors.length];
+          p.style.background = 'transparent';
+          const angle = (Math.PI * 2 * i) / 11;
+          const distance = 72 + Math.random() * 48;
+          p.style.setProperty('--x', Math.cos(angle) * distance + 'px');
+          p.style.setProperty('--y', Math.sin(angle) * distance + 'px');
+          document.body.appendChild(p);
+          p.addEventListener('animationend', () => p.remove());
+        }
+      });
+    }
+    </script>
+</body>
+</html>
